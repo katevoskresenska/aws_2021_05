@@ -25,7 +25,7 @@ Parameters:
     Default: aws_lohika
 
   BucketName:
-    Description: Name of bucket containing some_file.txt
+    Description: Name of bucket containing hello_file.txt
     Type: String
     Default: iamkatyu-first-bucket
 
@@ -41,11 +41,11 @@ Resources:
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
-          CidrIp: 178.165.103.138/32
+          CidrIp: 88.155.91.237/32
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
-          CidrIp: 178.165.103.138/32
+          CidrIp: 88.155.91.237/32
 
   MyEC2Instance:
     Description: EC2 Instance.
@@ -60,18 +60,13 @@ Resources:
         - !Ref HttpSshSecurityGroup
       IamInstanceProfile:
         !Ref MyEC2InstanceProfile
-    Metadata: 
-      AWS::CloudFormation::Init: 
-        config: 
-          sources:
-            /tmp: "https://iamkatyu-first-bucket.s3.amazonaws.com/some-file.txt"
-      AWS::CloudFormation::Authentication: 
-        rolebased: 
-          type: "S3"
-          buckets: 
-            - Ref: BucketName
-          roleName: 
-            Ref: MyS3Role
+      UserData:
+        "Fn::Base64":
+          !Sub |
+            #!/bin/bash -xe
+            sudo apt update
+            sudo apt install -y awscli
+            aws s3 cp s3://${BucketName}/hello_file.txt /home/ubuntu/hello_file.txt
 
   MyEC2InstanceProfile:
     Type: AWS::IAM::InstanceProfile
