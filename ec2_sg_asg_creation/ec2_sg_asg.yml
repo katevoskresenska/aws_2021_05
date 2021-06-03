@@ -1,0 +1,87 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description:
+  A template for EC2 instance creation with SSH/HTTP access, ASG with 2 instances and Java8 installed
+
+Parameters:
+
+  MyKeyName:
+    Description: EC2 instance SSH key
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: aws_lohika
+
+  EC2InstanceType:
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - m1.small
+      - m1.large
+    Description: EC2 instance type.
+
+  EC2AvailabilityZone:
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: us-west-2a
+    Description: EC2 instance availability zone.
+
+  myLaunchTemplateVersionNumber:
+    Description: EC2 instance template version number
+    Type: String
+    Default: 1
+
+Resources:
+
+  HttpSshSecurityGroup:
+    Description: Security group for SSH/HTTP from single IP address.
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH/HTTP to client host
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 178.165.103.138/32
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 178.165.103.138/32
+  
+  myLaunchTemplate:
+    Description: EC2 Instance template
+    Type: AWS::EC2::LaunchTemplate
+    Properties: 
+      LaunchTemplateName: !Sub ${AWS::StackName}-launch-template
+      LaunchTemplateData: 
+        ImageId: ami-03d5c68bab01f3496
+        InstanceType: 
+          Ref: EC2InstanceType
+        KeyName: !Ref MyKeyName
+        SecurityGroups: 
+          - !Ref HttpSshSecurityGroup
+        UserData:
+          "Fn::Base64":
+            !Sub |
+              #!/bin/bash -xe
+              sudo apt update && sudo apt install -y openjdk-8-jdk
+
+  myASG:
+    Description: AutoScalingGroup with 2 min instances
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      MinSize: '2'
+      MaxSize: '3'
+      DesiredCapacity: '2'
+      LaunchTemplate:
+        LaunchTemplateId: !Ref myLaunchTemplate
+        Version: !Ref myLaunchTemplateVersionNumber
+      AvailabilityZones: 
+        - !Ref EC2AvailabilityZone
+
+Outputs:
+  ASGName:
+    Description: Resource name
+    Value: !Ref myASG
+  TemplateVersionNumber:
+    Description: Launch template version number
+    Value: !GetAtt myLaunchTemplate.DefaultVersionNumber
