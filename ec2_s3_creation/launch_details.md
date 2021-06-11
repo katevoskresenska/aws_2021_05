@@ -14,3 +14,13 @@ upload: ./a_file.txt to s3://iamkatyu-first-bucket/a_file.txt
 2021-05-30 23:14:07         12 a_file.txt
 ```
 <br>
+
+<br>
+To deploy with terraform:
+```
+cd <terraform_project_folder>
+terraform init
+terraform validate
+terraform apply
+terraform destroy
+```
