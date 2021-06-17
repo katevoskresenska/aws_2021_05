@@ -1,0 +1,122 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description:
+  A template for EC2 instance creation with SSH/HTTP access and access to S3
+
+Parameters:
+  EC2InstanceType:
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - m1.small
+      - m1.large
+    Description: EC2 instance type.
+
+  EC2AvailabilityZone:
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: us-west-2a
+    Description: EC2 instance availability zone.
+
+  MyKeyName:
+    Description: EC2 instance SSH key
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: aws_lohika
+
+  BucketName:
+    Description: Name of bucket containing hello_file.txt
+    Type: String
+    Default: iamkatyu-first-bucket
+
+
+Resources:
+
+  HttpSshSecurityGroup:
+    Description: Security group for SSH/HTTP from single IP address.
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH/HTTP to client host
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 88.155.91.237/32
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 88.155.91.237/32
+
+  MyEC2Instance:
+    Description: EC2 Instance.
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-03d5c68bab01f3496
+      InstanceType: 
+        Ref: EC2InstanceType
+      AvailabilityZone: !Ref EC2AvailabilityZone
+      KeyName: !Ref MyKeyName
+      SecurityGroups: 
+        - !Ref HttpSshSecurityGroup
+      IamInstanceProfile:
+        !Ref MyEC2InstanceProfile
+      UserData:
+        "Fn::Base64":
+          !Sub |
+            #!/bin/bash -xe
+            sudo apt update
+            sudo apt install -y awscli
+            aws s3 cp s3://${BucketName}/hello_file.txt /home/ubuntu/hello_file.txt
+
+  MyEC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      Path: "/"
+      Roles: 
+        - Ref: MyS3Role
+
+  MyS3Policy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: S3Policy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:*
+            Resource: "*"
+      Roles:
+        - Ref: MyS3Role
+
+  MyS3Role:
+    Type: AWS::IAM::Role
+    Properties: 
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Effect: "Allow"
+            Principal: 
+              Service: 
+                - "ec2.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+      Path: "/"
+
+Outputs:
+  PublicIp:
+    Description: The Instance Piblic IP
+    Value: !GetAtt MyEC2Instance.PublicIp
+  InstanceID:
+    Description: The Instance ID
+    Value: !Ref MyEC2Instance
+  IAMProfileARN:
+    Description: MyEC2InstanceProfile Amason Resource Name
+    Value: !GetAtt MyEC2InstanceProfile.Arn
+  S3PolicyName:
+    Description: S3Policy Name
+    Value: !Ref MyS3Policy
+  S3RoleID:
+    Description: S3 Role ID
+    Value: !GetAtt MyS3Role.RoleId
