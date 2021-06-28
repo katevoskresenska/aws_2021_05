@@ -1,4 +1,4 @@
-This a tutorial on AWS with CloudFormation and Terraform deployment
+This is a tutorial on AWS with CloudFormation and Terraform deployment
 <br>
 <br>
 Before you start install aws-cli https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html and create the following files locally:
