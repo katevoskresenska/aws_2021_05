@@ -37,3 +37,7 @@ output "private_instance_ip" {
 output "instance_id" {
   value       = module.ec2[0].instance_id
 }
+
+output "aws_lb" {
+  value       = module.networking.aws_lb
+}

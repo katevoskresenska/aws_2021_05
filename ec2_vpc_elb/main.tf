@@ -17,6 +17,9 @@ provider "aws" {
 module "networking" {
   source = "./modules/networking"
     instance_id = module.ec2[0].instance_id
+    webserver_id = module.ec2[0].webserver_id
+    private_instance_id = module.ec2_private[0].private_instance_id
+    public_sg_id = module.ec2[0].public_sg_id
 }
 
 module "ec2" {

@@ -80,3 +80,59 @@ resource "aws_route_table_association" "private" {
   subnet_id      = element(aws_subnet.private_subnet.*.id, count.index)
   route_table_id = aws_route_table.private.id
 }
+
+resource "aws_lb_target_group" "target" {
+  name = "${var.environment}-target"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.vpc.id
+  target_type = "instance"
+
+  health_check {
+    enabled = true
+    path = "/index.html"
+    port = 80
+    protocol = "HTTP"
+  }
+
+  tags = {
+    Name        = "${var.environment}-target"
+    Environment = var.environment
+  }
+}
+
+resource "aws_lb_target_group_attachment" "public" {
+  target_group_arn = aws_lb_target_group.target.arn
+  port             = 80
+  target_id        = var.webserver_id
+}
+
+resource "aws_lb_target_group_attachment" "private" {
+  target_group_arn = aws_lb_target_group.target.arn
+  port             = 80
+  target_id        = var.private_instance_id
+}
+
+resource "aws_lb" "application_lb" {
+  name               = "application-lb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [var.public_sg_id]
+  subnets            = [aws_subnet.public_subnet[0].id, aws_subnet.private_subnet[0].id]
+
+  tags = {
+    Name        = "${var.environment}-lb"
+    Environment = var.environment
+  }
+
+}
+
+resource "aws_lb_listener" "listener" {
+  load_balancer_arn = aws_lb.application_lb.id
+  port = 80
+
+  default_action {
+    target_group_arn = aws_lb_target_group.target.id
+    type             = "forward"
+  }
+}

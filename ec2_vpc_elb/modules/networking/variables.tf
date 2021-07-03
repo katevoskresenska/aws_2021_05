@@ -29,3 +29,9 @@ variable "private_availability_zones" {
 }
 
 variable "instance_id" {}
+
+variable "webserver_id" {}
+
+variable "private_instance_id" {}
+
+variable "public_sg_id" {}

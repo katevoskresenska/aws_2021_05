@@ -21,3 +21,7 @@ output "public_subnet_id" {
 output "private_subnet_id" {
   value = [aws_subnet.private_subnet.*.id]
 }
+
+output "aws_lb" {
+  value = aws_lb.application_lb.dns_name
+}

@@ -11,3 +11,7 @@ output "webserver_public_ip" {
 output "instance_id" {
   value       = aws_instance.nat_instance.id
 }
+
+output "public_sg_id" {
+  value       = aws_security_group.allow_ssh_http.id
+}
